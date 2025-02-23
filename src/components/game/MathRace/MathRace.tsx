@@ -10,7 +10,6 @@ import { MathRaceProps } from './types';
 
 export const MathRace = ({
   onComplete,
-  onExit,
   difficulty = 'easy',
   problemCount = 10,
   mode = 'arithmetic',
