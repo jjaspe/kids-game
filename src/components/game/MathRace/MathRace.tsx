@@ -22,7 +22,6 @@ export const MathRace = ({
     currentProblem,
     isLoading,
     progress,
-    score,
     streak,
     checkAnswer,
   } = useProblemGen({
