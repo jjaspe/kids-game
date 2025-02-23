@@ -1,35 +1,70 @@
 import { Button } from '@components/common'
+import { BattleMode } from '@components/game/BattleMode'
+import { GameModeSelect } from '@components/game/GameModeSelect'
 import { MathRace } from '@components/game/MathRace'
-import { GameWrapper } from '@components/layout'
+import { GameWrapper } from '@components/layout/GameWrapper'
 import '@styles/global.css'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useState } from 'react'
+import { useDeviceAuth } from './hooks/useDeviceAuth'
 
 function App() {
   const [isPlaying, setIsPlaying] = useState(false)
+  const [gameMode, setGameMode] = useState<'single' | 'battle' | null>(null)
   const [finalScore, setFinalScore] = useState<number | null>(null)
+  const { isAuthorizedDevice, isLoading } = useDeviceAuth()
+
+  const handleStartGame = () => {
+    setIsPlaying(true)
+    setFinalScore(null)
+  }
 
   const handleGameComplete = (score: number) => {
     setFinalScore(score)
     setIsPlaying(false)
+    setGameMode(null)
   }
 
-  const handleStartGame = () => {
-    setFinalScore(null)
+  const handleSelectMode = (mode: 'single' | 'battle') => {
+    setGameMode(mode)
     setIsPlaying(true)
   }
 
+  const handleExit = () => {
+    setIsPlaying(false)
+    setGameMode(null)
+  }
+
+  if (isLoading) {
+    return (
+      <div className="loading">
+        Loading...
+      </div>
+    )
+  }
+
   return (
-    <GameWrapper>
+    <GameWrapper onExit={isPlaying ? handleExit : undefined}>
       <AnimatePresence mode="wait">
         {isPlaying ? (
-          <MathRace
-            key="game"
-            mode="counting"
-            difficulty="easy"
-            problemCount={5}
-            onComplete={handleGameComplete}
-            onExit={() => setIsPlaying(false)}
+          gameMode === 'battle' ? (
+            <BattleMode
+              key="battle"
+              onComplete={handleGameComplete}
+              onExit={handleExit}
+            />
+          ) : (
+            <MathRace
+              key="game"
+              onComplete={handleGameComplete}
+              mode="counting"
+            />
+          )
+        ) : gameMode === null ? (
+          <GameModeSelect
+            key="mode-select"
+            onSelectMode={handleSelectMode}
+            canBattle={isAuthorizedDevice}
           />
         ) : (
           <motion.div
@@ -60,7 +95,7 @@ function App() {
                 size="large"
                 onClick={handleStartGame}
               >
-                {finalScore !== null ? 'Count Again!' : 'Start Counting!'}
+                {finalScore !== null ? 'Play Again!' : 'Start Playing!'}
               </Button>
             </div>
           </motion.div>

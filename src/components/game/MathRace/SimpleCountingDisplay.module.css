@@ -65,6 +65,37 @@
   box-shadow: var(--shadow-sm);
 }
 
+.visualContainer.wrong {
+  animation: shake 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+  transform: translate3d(0, 0, 0);
+  background-color: rgba(244, 67, 54, 0.15);
+  border: 3px solid var(--error-color);
+  box-shadow: 0 0 15px rgba(244, 67, 54, 0.3);
+}
+
+@keyframes shake {
+  10%,
+  90% {
+    transform: translate3d(-2px, 0, 0);
+  }
+
+  20%,
+  80% {
+    transform: translate3d(4px, 0, 0);
+  }
+
+  30%,
+  50%,
+  70% {
+    transform: translate3d(-6px, 0, 0);
+  }
+
+  40%,
+  60% {
+    transform: translate3d(6px, 0, 0);
+  }
+}
+
 /* iPad Specific Styles */
 @media (min-width: 768px) and (max-width: 1024px) {
   .container {

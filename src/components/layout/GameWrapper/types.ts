@@ -4,5 +4,6 @@ export interface GameWrapperProps {
   showHeader?: boolean;
   showFooter?: boolean;
   onBack?: () => void;
+  onExit?: () => void;
   isLoading?: boolean;
-} 
+}

@@ -15,6 +15,7 @@ interface UseProblemGenReturn {
   score: number;
   streak: number;
   checkAnswer: (answer: number) => void;
+  isCorrect: boolean | null;
 }
 
 export const useProblemGen = ({
@@ -29,6 +30,7 @@ export const useProblemGen = ({
   const [isLoading, setIsLoading] = useState(true);
   const [score, setScore] = useState(0);
   const [streak, setStreak] = useState(0);
+  const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
 
   // Generate problems on mount
   useEffect(() => {
@@ -45,22 +47,38 @@ export const useProblemGen = ({
       const problem = problems[currentIndex];
       if (!problem) return;
 
-      const isCorrect = answer === problem.answer;
+      const correct = answer === problem.answer;
+      setIsCorrect(correct);
 
-      if (isCorrect) {
+      if (correct) {
         const newStreak = streak + 1;
         setStreak(newStreak);
         setScore((prev) => prev + 10 * newStreak); // Bonus points for streaks
+
+        // Move forward on correct answer
+        if (currentIndex < problems.length - 1) {
+          setCurrentIndex((prev) => prev + 1);
+        } else if (onComplete) {
+          onComplete(score);
+        }
       } else {
         setStreak(0);
+        // Wait for wrong animation before moving back
+        setTimeout(() => {
+          // Move back on wrong answer if not at start
+          if (currentIndex > 0) {
+            setCurrentIndex((prev) => prev - 1);
+          }
+          // Reset isCorrect after moving back
+          setIsCorrect(null);
+        }, 1000);
+        return; // Early return to prevent the final timeout
       }
 
-      // Move to next problem
-      if (currentIndex < problems.length - 1) {
-        setCurrentIndex((prev) => prev + 1);
-      } else if (onComplete) {
-        onComplete(score);
-      }
+      // Reset isCorrect after a delay (only for correct answers)
+      setTimeout(() => {
+        setIsCorrect(null);
+      }, 1000);
     },
     [currentIndex, problems, streak, score, onComplete]
   );
@@ -72,5 +90,6 @@ export const useProblemGen = ({
     score,
     streak,
     checkAnswer,
+    isCorrect,
   };
 };

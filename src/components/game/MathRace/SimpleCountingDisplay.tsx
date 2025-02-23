@@ -1,4 +1,5 @@
 import { Problem } from '@/types/game.types';
+import clsx from 'clsx';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
 import { NumberPad } from '../../common/NumberPad';
@@ -9,6 +10,7 @@ interface SimpleCountingDisplayProps {
   onAnswer: (answer: number) => void;
   isChecking: boolean;
   streak: number;
+  isCorrect: boolean | null;
 }
 
 export const SimpleCountingDisplay = ({
@@ -16,6 +18,7 @@ export const SimpleCountingDisplay = ({
   onAnswer,
   isChecking,
   streak,
+  isCorrect,
 }: SimpleCountingDisplayProps) => {
   const [currentAnswer, setCurrentAnswer] = useState('');
 
@@ -63,7 +66,9 @@ export const SimpleCountingDisplay = ({
         How many do you see?
       </div>
 
-      <div className={styles.visualContainer}>
+      <div className={clsx(styles.visualContainer, {
+        [styles.wrong]: isCorrect === false
+      })}>
         <AnimatePresence mode="popLayout">
           {problem.visualElements.map((emoji, index) => (
             <motion.div

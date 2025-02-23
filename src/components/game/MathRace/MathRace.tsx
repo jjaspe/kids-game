@@ -10,6 +10,8 @@ import { MathRaceProps } from './types';
 
 export const MathRace = ({
   onComplete,
+  onExit,
+  onAnswer,
   difficulty = 'easy',
   problemCount = 10,
   mode = 'arithmetic',
@@ -23,6 +25,7 @@ export const MathRace = ({
     progress,
     streak,
     checkAnswer,
+    isCorrect,
   } = useProblemGen({
     age: mode === 'arithmetic' ? 7 : 4, // Use age 4 for counting modes
     difficulty,
@@ -33,12 +36,19 @@ export const MathRace = ({
     },
   });
 
-  const handleAnswer = useCallback((answer: number) => {
+  const handleAnswer = useCallback(async (answer: number) => {
     setIsChecking(true);
     
-    // Simulate checking animation
+    // Call the onAnswer prop if provided
+    if (onAnswer) {
+      await onAnswer(answer);
+    }
+    
+    // Check answer immediately but don't move yet
+    checkAnswer(answer);
+    
+    // Wait for the animation to complete before moving
     setTimeout(() => {
-      checkAnswer(answer);
       setIsMoving(true);
       
       // Stop moving animation after a delay
@@ -46,8 +56,8 @@ export const MathRace = ({
         setIsMoving(false);
         setIsChecking(false);
       }, 500);
-    }, 500);
-  }, [checkAnswer]);
+    }, 1000); // Wait for wrong animation if answer is incorrect
+  }, [checkAnswer, onAnswer]);
 
   if (isLoading || !currentProblem) {
     return <div>Loading...</div>;
@@ -66,6 +76,16 @@ export const MathRace = ({
 
   return (
     <div className={styles.container}>
+      {onExit && (
+        <button 
+          onClick={onExit}
+          className={styles.exitButton}
+          aria-label="Exit game"
+        >
+          ← Exit
+        </button>
+      )}
+
       <RaceTrack>
         <Avatar 
           progress={progress} 
@@ -82,6 +102,7 @@ export const MathRace = ({
             onAnswer={handleAnswer}
             isChecking={isChecking}
             streak={streak}
+            isCorrect={isCorrect}
           />
         ) : (
           <ProblemDisplay
@@ -90,6 +111,7 @@ export const MathRace = ({
             onAnswer={handleAnswer}
             isChecking={isChecking}
             streak={streak}
+            isCorrect={isCorrect}
           />
         )}
       </AnimatePresence>
