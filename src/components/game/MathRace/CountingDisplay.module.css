@@ -1,0 +1,46 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem;
+  padding: 2rem;
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.questionText {
+  font-size: 1.5rem;
+  font-weight: bold;
+  text-align: center;
+  color: var(--text-primary);
+}
+
+.visualContainer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  justify-content: center;
+  padding: 2rem;
+  background: var(--bg-secondary);
+  border-radius: 1rem;
+  max-width: 400px;
+}
+
+.visualElement {
+  font-size: 2rem;
+  cursor: pointer;
+  user-select: none;
+  transition: transform 0.2s ease;
+}
+
+.visualElement:hover {
+  transform: scale(1.1);
+}
+
+.streakIndicator {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: var(--accent-primary);
+  height: 1.5rem;
+}

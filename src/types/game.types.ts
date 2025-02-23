@@ -1,4 +1,4 @@
-export type Difficulty = 'easy' | 'medium' | 'hard';
+export type Difficulty = "easy" | "medium" | "hard";
 
 export interface Problem {
   id: string;
@@ -6,6 +6,7 @@ export interface Problem {
   answer: number;
   difficulty: Difficulty;
   timeLimit?: number; // in seconds
+  visualElements?: string[]; // Array of emoji strings for counting mode
 }
 
 export interface GameState {
@@ -13,7 +14,7 @@ export interface GameState {
   streak: number;
   level: number;
   currentProblem: Problem | null;
-  gameStatus: 'idle' | 'playing' | 'paused' | 'completed';
+  gameStatus: "idle" | "playing" | "paused" | "completed";
   startTime: Date | null;
   endTime: Date | null;
 }
@@ -49,4 +50,4 @@ export interface GameSettings {
   difficulty: Difficulty;
   timeLimit: number; // in seconds
   problemCount: number;
-} 
+}

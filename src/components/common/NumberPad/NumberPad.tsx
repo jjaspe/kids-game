@@ -20,6 +20,12 @@ export const NumberPad = ({
     [currentValue, maxLength, onNumberSelect]
   );
 
+  const handleSubmit = () => {
+    if (onSubmit && currentValue) {
+      onSubmit(Number(currentValue));
+    }
+  };
+
   return (
     <div className={styles.numberPad}>
       {/* Numbers 1-9 */}
@@ -68,7 +74,7 @@ export const NumberPad = ({
       {onSubmit && (
         <button
           className={clsx(styles.button, styles.submit)}
-          onClick={onSubmit}
+          onClick={handleSubmit}
           disabled={disabled || !currentValue}
           type="button"
           aria-label="Submit"

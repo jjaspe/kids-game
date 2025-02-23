@@ -1,75 +1,71 @@
-import '@styles/global.css'
-import { motion } from 'framer-motion'
-import { useState } from 'react'
-import { Button, NumberPad, ProgressBar } from '@components/common'
+import { Button } from '@components/common'
+import { MathRace } from '@components/game/MathRace'
 import { GameWrapper } from '@components/layout'
+import '@styles/global.css'
+import { AnimatePresence, motion } from 'framer-motion'
+import { useState } from 'react'
 
 function App() {
-  const [value, setValue] = useState('')
-  const [progress, setProgress] = useState(0)
-  const [isLoading, setIsLoading] = useState(false)
+  const [isPlaying, setIsPlaying] = useState(false)
+  const [finalScore, setFinalScore] = useState<number | null>(null)
 
-  const handleNumberSelect = (num: number) => {
-    setValue(prev => prev + num)
+  const handleGameComplete = (score: number) => {
+    setFinalScore(score)
+    setIsPlaying(false)
   }
 
-  const handleDelete = () => {
-    setValue(prev => prev.slice(0, -1))
-  }
-
-  const handleSubmit = () => {
-    setIsLoading(true)
-    // Simulate loading
-    setTimeout(() => {
-      setProgress(prev => Math.min(prev + 10, 100))
-      setValue('')
-      setIsLoading(false)
-    }, 500)
+  const handleStartGame = () => {
+    setFinalScore(null)
+    setIsPlaying(true)
   }
 
   return (
-    <GameWrapper isLoading={isLoading}>
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        className="container"
-      >
-        <header className="text-center">
-          <h1 className="text-primary">Math Champions</h1>
-          <p>Let's make learning math fun!</p>
-        </header>
-        
-        <main className="text-center" style={{ maxWidth: '400px', margin: '0 auto', padding: '2rem' }}>
-          <div style={{ marginBottom: '2rem' }}>
-            <Button variant="primary" size="large">
-              Start Game
-            </Button>
-          </div>
+    <GameWrapper>
+      <AnimatePresence mode="wait">
+        {isPlaying ? (
+          <MathRace
+            key="game"
+            mode="counting"
+            difficulty="easy"
+            problemCount={5}
+            onComplete={handleGameComplete}
+            onExit={() => setIsPlaying(false)}
+          />
+        ) : (
+          <motion.div
+            key="menu"
+            className="text-center"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+          >
+            <h1 className="text-primary">Math Champions</h1>
+            <p>Count the animals and type the number! 🦁</p>
+            
+            {finalScore !== null && (
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                className="text-success"
+                style={{ margin: '2rem 0' }}
+              >
+                <h2>Fantastic counting! 🌟</h2>
+                <p>Your score: {finalScore}</p>
+              </motion.div>
+            )}
 
-          <div style={{ marginBottom: '2rem' }}>
-            <ProgressBar 
-              value={progress} 
-              max={100} 
-              showLabel 
-              animated 
-              height="20px"
-            />
-          </div>
-
-          <div>
-            <div style={{ marginBottom: '1rem', fontSize: '2rem' }}>
-              {value || '0'}
+            <div style={{ marginTop: '2rem' }}>
+              <Button
+                variant="primary"
+                size="large"
+                onClick={handleStartGame}
+              >
+                {finalScore !== null ? 'Count Again!' : 'Start Counting!'}
+              </Button>
             </div>
-            <NumberPad
-              onNumberSelect={handleNumberSelect}
-              onDelete={handleDelete}
-              onSubmit={handleSubmit}
-              currentValue={value}
-              disabled={isLoading}
-            />
-          </div>
-        </main>
-      </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </GameWrapper>
   )
 }
