@@ -18,7 +18,8 @@
   --text-secondary: #757575;
 
   /* Typography */
-  --font-primary: "Comic Sans MS", "Comic Sans", cursive;
+  --font-primary: "Comic Sans MS", "Comic Neue", "Chalkboard SE", "Marker Felt",
+    -apple-system, "Comic Sans", cursive;
   --font-size-small: 0.875rem;
   --font-size-medium: 1rem;
   --font-size-large: 1.25rem;
