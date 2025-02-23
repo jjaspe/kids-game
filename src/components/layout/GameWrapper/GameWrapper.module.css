@@ -3,7 +3,8 @@
   flex-direction: column;
   min-height: 100vh;
   background-color: var(--background-color);
-  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  padding: env(safe-area-inset-top) env(safe-area-inset-right)
+    env(safe-area-inset-bottom) env(safe-area-inset-left);
 }
 
 .header {
@@ -77,12 +78,22 @@
   .main {
     padding: var(--spacing-lg);
   }
-  
+
   .header {
     padding: var(--spacing-lg);
   }
-  
+
   .title {
     font-size: var(--font-size-xxlarge);
   }
-} 
+}
+
+@media (min-width: 768px) and (max-width: 1024px) {
+  .header {
+    display: none;
+  }
+
+  .main {
+    padding: var(--spacing-sm);
+  }
+}

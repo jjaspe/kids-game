@@ -64,3 +64,26 @@
   border-radius: var(--border-radius-full);
   box-shadow: var(--shadow-sm);
 }
+
+/* iPad Specific Styles */
+@media (min-width: 768px) and (max-width: 1024px) {
+  .container {
+    gap: 1rem;
+    padding: 1rem;
+  }
+
+  .questionText {
+    display: none;
+  }
+
+  .visualContainer {
+    gap: 0.75rem;
+    padding: 1rem;
+    min-height: 80px;
+  }
+
+  .visualElement {
+    font-size: 3rem;
+    padding: 0.25rem;
+  }
+}
