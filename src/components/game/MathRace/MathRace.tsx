@@ -15,6 +15,7 @@ export const MathRace = ({
   difficulty = 'easy',
   problemCount = 10,
   mode = 'arithmetic',
+  hideTrack = false,
 }: MathRaceProps) => {
   const [isMoving, setIsMoving] = useState(false);
   const [isChecking, setIsChecking] = useState(false);
@@ -27,10 +28,9 @@ export const MathRace = ({
     checkAnswer,
     isCorrect,
   } = useProblemGen({
-    age: mode === 'arithmetic' ? 7 : 4, // Use age 4 for counting modes
+    age: mode === 'arithmetic' ? 7 : 4,
     difficulty,
     problemCount,
-    mode,
     onComplete: (finalScore) => {
       if (onComplete) onComplete(finalScore);
     },
@@ -39,12 +39,15 @@ export const MathRace = ({
   const handleAnswer = useCallback(async (answer: number) => {
     setIsChecking(true);
     
-    // Call the onAnswer prop if provided
+    // Check answer locally
+    const correct = answer === currentProblem?.answer;
+    
+    // Call the onAnswer prop with the result
     if (onAnswer) {
-      await onAnswer(answer);
+      await onAnswer(answer, correct);
     }
     
-    // Check answer immediately but don't move yet
+    // Check answer in the hook to update local state
     checkAnswer(answer);
     
     // Wait for the animation to complete before moving
@@ -56,8 +59,8 @@ export const MathRace = ({
         setIsMoving(false);
         setIsChecking(false);
       }, 500);
-    }, 1000); // Wait for wrong animation if answer is incorrect
-  }, [checkAnswer, onAnswer]);
+    }, 1000);
+  }, [checkAnswer, onAnswer, currentProblem]);
 
   if (isLoading || !currentProblem) {
     return <div>Loading...</div>;
@@ -86,13 +89,15 @@ export const MathRace = ({
         </button>
       )}
 
-      <RaceTrack>
-        <Avatar 
-          progress={progress} 
-          isMoving={isMoving}
-          character={getCharacter()}
-        />
-      </RaceTrack>
+      {!hideTrack && (
+        <RaceTrack>
+          <Avatar 
+            progress={progress} 
+            isMoving={isMoving}
+            character={getCharacter()}
+          />
+        </RaceTrack>
+      )}
 
       <AnimatePresence mode="wait">
         {currentProblem.visualElements ? (

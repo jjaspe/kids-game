@@ -1,13 +1,15 @@
-import { GameMode } from "@/features/problemGen/types";
 import { Difficulty, Problem } from "@/types/game.types";
 
 export interface MathRaceProps {
   onComplete?: (score: number) => void;
   onExit?: () => void;
-  onAnswer?: (answer: number) => void | Promise<void>;
+  onAnswer?: (answer: number, isCorrect: boolean) => void | Promise<void>;
+  onNewProblem?: (problem: Problem) => void | Promise<void>;
+  currentProblem?: Problem;
   difficulty?: Difficulty;
   problemCount?: number;
-  mode?: GameMode;
+  mode?: "arithmetic" | "counting" | "simple_counting";
+  hideTrack?: boolean;
 }
 
 export interface AvatarProps {

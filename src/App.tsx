@@ -57,7 +57,7 @@ function App() {
             <MathRace
               key="game"
               onComplete={handleGameComplete}
-              mode="counting"
+              mode="simple_counting"
             />
           )
         ) : gameMode === null ? (

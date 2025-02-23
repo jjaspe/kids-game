@@ -1,15 +1,17 @@
 import { useDeviceAuth } from '@/hooks/useDeviceAuth';
 import { db } from '@/lib/firebase';
-import { Problem } from '@/types/game.types';
 import { get, onValue, ref, set } from 'firebase/database';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
 import { MathRace } from '../MathRace';
+import { Avatar } from '../MathRace/Avatar';
+import { RaceTrack } from '../MathRace/RaceTrack';
 import styles from './BattleMode.module.css';
 
 interface BattleState {
   players: {
     [deviceId: string]: {
+      name: string;
       score: number;
       progress: number;
       health: number;
@@ -17,7 +19,6 @@ interface BattleState {
       lastActive: number;
     };
   };
-  currentProblem?: Problem;
   gameStatus: 'waiting' | 'playing' | 'completed';
   winner?: string;
 }
@@ -27,79 +28,82 @@ interface BattleModeProps {
   onExit?: () => void;
 }
 
+const FIXED_ROOM_ID = 'main_battle_room';
+
 export const BattleMode = ({ onComplete, onExit }: BattleModeProps) => {
-  const { deviceId } = useDeviceAuth();
+  const { deviceId, deviceInfo } = useDeviceAuth();
   const [battleState, setBattleState] = useState<BattleState>({
     players: {},
     gameStatus: 'waiting',
   });
-  const [roomId, setRoomId] = useState<string | null>(null);
+  const [isMoving, setIsMoving] = useState(false);
 
   useEffect(() => {
     if (!deviceId) return;
 
     // Join or create a battle room
     const findOrCreateRoom = async () => {
-      const roomsRef = ref(db, 'battleRooms');
-      const snapshot = await get(roomsRef);
-      const rooms = snapshot.val() || {};
+      try {
+        console.log('Finding or creating room...');
+        
+        // Join the room
+        const roomRef = ref(db, `battleRooms/${FIXED_ROOM_ID}`);
+        console.log('Room ref:', roomRef);
+        
+        const snapshot = await get(roomRef);
+        const currentRoom = snapshot.val() || {
+          players: {},
+          gameStatus: 'waiting',
+        };
+        console.log('Current room data:', currentRoom);
 
-      // Find an available room or create a new one
-      let availableRoom = null;
-      for (const [id, room] of Object.entries(rooms)) {
-        const roomData = room as BattleState;
-        if (roomData.gameStatus === 'waiting' && Object.keys(roomData.players).length < 2) {
-          availableRoom = id;
-          break;
+        // Add player to room if not already present
+        if (!currentRoom.players[deviceId]) {
+          currentRoom.players[deviceId] = {
+            name: deviceInfo?.name || 'Player',
+            score: 0,
+            progress: 0,
+            health: 100,
+            isReady: true,
+            lastActive: Date.now(),
+          };
+        }
+
+        console.log('Setting room data:', currentRoom);
+        await set(roomRef, currentRoom);
+        console.log('Room data set successfully');
+
+        // Listen for room updates
+        onValue(roomRef, (snapshot) => {
+          console.log('Room update:', snapshot.val());
+          const newState = snapshot.val() as BattleState;
+          setBattleState(newState);
+
+          // Start game if both players are ready
+          if (
+            newState.gameStatus === 'waiting' &&
+            Object.keys(newState.players).length === 2 &&
+            Object.values(newState.players).every((p) => p.isReady)
+          ) {
+            set(ref(db, `battleRooms/${FIXED_ROOM_ID}/gameStatus`), 'playing');
+          }
+        });
+      } catch (error) {
+        console.error('Error in findOrCreateRoom:', error);
+        if (error instanceof Error) {
+          console.error('Error message:', error.message);
+          console.error('Error stack:', error.stack);
         }
       }
-
-      const finalRoomId = availableRoom || `battle_${Date.now()}`;
-      setRoomId(finalRoomId);
-
-      // Join the room
-      const roomRef = ref(db, `battleRooms/${finalRoomId}`);
-      const currentRoom = (await get(roomRef)).val() || {
-        players: {},
-        gameStatus: 'waiting',
-      };
-
-      // Add player to room
-      currentRoom.players[deviceId] = {
-        score: 0,
-        progress: 0,
-        health: 100,
-        isReady: true,
-        lastActive: Date.now(),
-      };
-
-      await set(roomRef, currentRoom);
-
-      // Listen for room updates
-      onValue(roomRef, (snapshot) => {
-        const newState = snapshot.val() as BattleState;
-        setBattleState(newState);
-
-        // Start game if both players are ready
-        if (
-          newState.gameStatus === 'waiting' &&
-          Object.keys(newState.players).length === 2 &&
-          Object.values(newState.players).every((p) => p.isReady)
-        ) {
-          set(ref(db, `battleRooms/${finalRoomId}/gameStatus`), 'playing');
-        }
-      });
     };
 
     findOrCreateRoom();
-  }, [deviceId]);
+  }, [deviceId, deviceInfo]);
 
-  const handleAnswer = async (answer: number) => {
-    if (!roomId || !deviceId) return;
+  const handleAnswer = async (isCorrect: boolean) => {
+    if (!deviceId) return;
 
-    const isCorrect = answer === battleState.currentProblem?.answer;
-    const roomRef = ref(db, `battleRooms/${roomId}`);
-    const playerRef = ref(db, `battleRooms/${roomId}/players/${deviceId}`);
+    const playerRef = ref(db, `battleRooms/${FIXED_ROOM_ID}/players/${deviceId}`);
 
     // Update player stats
     const playerUpdate = {
@@ -108,28 +112,23 @@ export const BattleMode = ({ onComplete, onExit }: BattleModeProps) => {
       lastActive: Date.now(),
     };
 
-    // If correct, damage opponent
     if (isCorrect) {
-      const opponent = Object.keys(battleState.players).find((id) => id !== deviceId);
-      if (opponent) {
-        const opponentRef = ref(db, `battleRooms/${roomId}/players/${opponent}`);
-        const opponentHealth = battleState.players[opponent].health - 20;
-        await set(opponentRef, {
-          ...battleState.players[opponent],
-          health: opponentHealth,
-        });
+      // Animate the avatar
+      setIsMoving(true);
+      setTimeout(() => setIsMoving(false), 500);
 
-        // Check for game over
-        if (opponentHealth <= 0) {
-          await set(roomRef, {
-            ...battleState,
-            gameStatus: 'completed',
-            winner: deviceId,
-          });
-          if (onComplete) {
-            onComplete(playerUpdate.score);
-          }
+      // Check for game over
+      if (playerUpdate.progress >= 100) {
+        const roomRef = ref(db, `battleRooms/${FIXED_ROOM_ID}`);
+        await set(roomRef, {
+          ...battleState,
+          gameStatus: 'completed',
+          winner: deviceId,
+        });
+        if (onComplete) {
+          onComplete(playerUpdate.score);
         }
+        return;
       }
     }
 
@@ -144,39 +143,12 @@ export const BattleMode = ({ onComplete, onExit }: BattleModeProps) => {
     return opponent ? opponent[1] : null;
   };
 
-  if (!deviceId || !roomId) {
+  if (!deviceId) {
     return <div>Loading...</div>;
   }
 
   return (
     <div className={styles.battleContainer}>
-      {/* Battle HUD */}
-      <motion.div className={styles.battleHUD}>
-        <div className={styles.playerStats}>
-          <motion.div
-            className={styles.healthBar}
-            style={{
-              width: `${battleState.players[deviceId]?.health || 0}%`,
-            }}
-          />
-          <span>HP: {battleState.players[deviceId]?.health || 0}</span>
-          <span>Score: {battleState.players[deviceId]?.score || 0}</span>
-        </div>
-
-        {getOpponentStats() && (
-          <div className={styles.opponentStats}>
-            <motion.div
-              className={styles.healthBar}
-              style={{
-                width: `${getOpponentStats()?.health || 0}%`,
-              }}
-            />
-            <span>Opponent HP: {getOpponentStats()?.health || 0}</span>
-            <span>Score: {getOpponentStats()?.score || 0}</span>
-          </div>
-        )}
-      </motion.div>
-
       <AnimatePresence mode="wait">
         {battleState.gameStatus === 'waiting' && (
           <motion.div
@@ -191,15 +163,44 @@ export const BattleMode = ({ onComplete, onExit }: BattleModeProps) => {
         )}
 
         {battleState.gameStatus === 'playing' && (
-          <MathRace
-            mode="arithmetic"
-            difficulty="medium"
-            onComplete={(score) => {
-              if (onComplete) onComplete(score);
-            }}
-            onExit={onExit}
-            onAnswer={handleAnswer}
-          />
+          <>
+            <RaceTrack>
+              {/* Player avatar */}
+              <div className={styles.playerLabel}>
+                {battleState.players[deviceId]?.name || 'Player'}
+              </div>
+              <Avatar
+                progress={battleState.players[deviceId]?.progress || 0}
+                isMoving={isMoving}
+                character="🦁"
+              />
+            </RaceTrack>
+
+            {/* Opponent track */}
+            {getOpponentStats() && (
+              <RaceTrack>
+                <div className={styles.playerLabel}>
+                  {getOpponentStats()?.name || 'Opponent'}
+                </div>
+                <Avatar
+                  progress={getOpponentStats()?.progress || 0}
+                  isMoving={false}
+                  character="🦊"
+                />
+              </RaceTrack>
+            )}
+
+            <MathRace
+              mode="simple_counting"
+              difficulty="medium"
+              onComplete={(score) => {
+                if (onComplete) onComplete(score);
+              }}
+              onExit={onExit}
+              onAnswer={(_, isCorrect) => handleAnswer(isCorrect)}
+              hideTrack={true}
+            />
+          </>
         )}
 
         {battleState.gameStatus === 'completed' && (

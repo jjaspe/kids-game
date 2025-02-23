@@ -1,12 +1,19 @@
-import { db } from "@/lib/firebase";
-import { get, ref, set } from "firebase/database";
+import { firestore } from "@/lib/firebase";
+import {
+  collection,
+  getDocs,
+  query,
+  updateDoc,
+  where,
+} from "firebase/firestore";
 import { useEffect, useState } from "react";
 
 export interface AuthorizedDevice {
   id: string;
   name: string;
-  createdAt: number;
-  lastActive: number;
+  token: string;
+  createdAt: Date;
+  lastUsed: Date;
 }
 
 export const useDeviceAuth = () => {
@@ -17,27 +24,30 @@ export const useDeviceAuth = () => {
   useEffect(() => {
     const checkDeviceAuth = async () => {
       try {
-        // Get device ID from localStorage or create new one
-        let deviceId = localStorage.getItem("deviceId");
-        if (!deviceId) {
-          deviceId = `device_${Date.now()}_${Math.random()
-            .toString(36)
-            .substr(2, 9)}`;
-          localStorage.setItem("deviceId", deviceId);
+        // Get device token from URL
+        const params = new URLSearchParams(window.location.search);
+        const deviceToken = params.get("device");
+        console.log("Device token:", deviceToken);
+
+        if (!deviceToken) {
+          setIsLoading(false);
+          return;
         }
 
-        // Check if device is authorized
-        const deviceRef = ref(db, `authorizedDevices/${deviceId}`);
-        const snapshot = await get(deviceRef);
-        const deviceData = snapshot.val() as AuthorizedDevice | null;
+        // Query Firestore for device with matching token
+        const devicesRef = collection(firestore, "authorized_devices");
+        const q = query(devicesRef, where("token", "==", deviceToken));
+        const querySnapshot = await getDocs(q);
 
-        if (deviceData) {
+        if (!querySnapshot.empty) {
+          const doc = querySnapshot.docs[0];
+          const deviceData = doc.data() as AuthorizedDevice;
           setIsAuthorizedDevice(true);
-          setDeviceInfo(deviceData);
-          // Update last active timestamp
-          await set(deviceRef, {
-            ...deviceData,
-            lastActive: Date.now(),
+          setDeviceInfo({ ...deviceData, id: doc.id, name: deviceData.name });
+
+          // Update last used timestamp
+          await updateDoc(doc.ref, {
+            lastUsed: new Date(),
           });
         }
       } catch (error) {
@@ -54,6 +64,6 @@ export const useDeviceAuth = () => {
     isAuthorizedDevice,
     deviceInfo,
     isLoading,
-    deviceId: deviceInfo?.id || localStorage.getItem("deviceId") || null,
+    deviceId: deviceInfo?.id || null,
   };
 };

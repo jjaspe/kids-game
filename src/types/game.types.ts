@@ -1,5 +1,7 @@
 export type Difficulty = "easy" | "medium" | "hard";
 
+export type GameMode = "arithmetic" | "counting" | "simple_counting" | "battle";
+
 export interface Problem {
   id: string;
   question: string;

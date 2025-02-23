@@ -1,93 +1,79 @@
-import { generateProblems } from "@/features/problemGen/problemGenerator";
-import { GeneratorOptions } from "@/features/problemGen/types";
-import { Problem } from "@/types/game.types";
+import { generateProblem } from "@/features/problemGen/problemGenerator";
+import { Difficulty, Problem } from "@/types/game.types";
 import { useCallback, useEffect, useState } from "react";
 
-interface UseProblemGenProps extends GeneratorOptions {
+interface UseProblemGenProps {
+  age: number;
+  difficulty: Difficulty;
   problemCount?: number;
   onComplete?: (score: number) => void;
-}
-
-interface UseProblemGenReturn {
-  currentProblem: Problem | null;
-  isLoading: boolean;
-  progress: number;
-  score: number;
-  streak: number;
-  checkAnswer: (answer: number) => void;
-  isCorrect: boolean | null;
 }
 
 export const useProblemGen = ({
   age,
   difficulty,
   problemCount = 10,
-  excludeOperations,
   onComplete,
-}: UseProblemGenProps): UseProblemGenReturn => {
-  const [problems, setProblems] = useState<Problem[]>([]);
-  const [currentIndex, setCurrentIndex] = useState(0);
+}: UseProblemGenProps) => {
+  const [currentProblem, setCurrentProblem] = useState<Problem | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [score, setScore] = useState(0);
+  const [progress, setProgress] = useState(0);
   const [streak, setStreak] = useState(0);
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
+  const [score, setScore] = useState(0);
+  const [problemsCompleted, setProblemsCompleted] = useState(0);
 
-  // Generate problems on mount
+  const generateNewProblem = useCallback(() => {
+    const problem = generateProblem({ age, difficulty });
+    setCurrentProblem(problem);
+  }, [age, difficulty]);
+
   useEffect(() => {
-    const newProblems = generateProblems(
-      { age, difficulty, excludeOperations },
-      problemCount
-    );
-    setProblems(newProblems);
+    generateNewProblem();
     setIsLoading(false);
-  }, [age, difficulty, excludeOperations, problemCount]);
+  }, [generateNewProblem]);
 
   const checkAnswer = useCallback(
     (answer: number) => {
-      const problem = problems[currentIndex];
-      if (!problem) return;
+      if (!currentProblem) return;
 
-      const correct = answer === problem.answer;
+      const correct = answer === currentProblem.answer;
       setIsCorrect(correct);
 
       if (correct) {
-        const newStreak = streak + 1;
-        setStreak(newStreak);
-        setScore((prev) => prev + 10 * newStreak); // Bonus points for streaks
-
-        // Move forward on correct answer
-        if (currentIndex < problems.length - 1) {
-          setCurrentIndex((prev) => prev + 1);
-        } else if (onComplete) {
-          onComplete(score);
-        }
+        setStreak((prev) => prev + 1);
+        setScore((prev) => prev + 10);
+        setProgress((prev) => Math.min(prev + 10, 100));
       } else {
         setStreak(0);
-        // Wait for wrong animation before moving back
-        setTimeout(() => {
-          // Move back on wrong answer if not at start
-          if (currentIndex > 0) {
-            setCurrentIndex((prev) => prev - 1);
-          }
-          // Reset isCorrect after moving back
-          setIsCorrect(null);
-        }, 1000);
-        return; // Early return to prevent the final timeout
       }
 
-      // Reset isCorrect after a delay (only for correct answers)
+      setProblemsCompleted((prev) => prev + 1);
+
+      // Generate new problem after a delay
       setTimeout(() => {
-        setIsCorrect(null);
+        if (problemsCompleted + 1 >= problemCount) {
+          if (onComplete) onComplete(score);
+        } else {
+          generateNewProblem();
+          setIsCorrect(null);
+        }
       }, 1000);
     },
-    [currentIndex, problems, streak, score, onComplete]
+    [
+      currentProblem,
+      problemCount,
+      problemsCompleted,
+      score,
+      onComplete,
+      generateNewProblem,
+    ]
   );
 
   return {
-    currentProblem: problems[currentIndex] || null,
+    currentProblem,
     isLoading,
-    progress: (currentIndex / problemCount) * 100,
-    score,
+    progress,
     streak,
     checkAnswer,
     isCorrect,

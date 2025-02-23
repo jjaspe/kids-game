@@ -7,13 +7,7 @@
 }
 
 .battleHUD {
-  display: flex;
-  justify-content: space-between;
-  padding: var(--spacing-md);
-  background: rgba(0, 0, 0, 0.8);
-  border-radius: var(--border-radius-lg);
-  color: white;
-  margin-bottom: var(--spacing-md);
+  display: none;
 }
 
 .playerStats,
@@ -31,15 +25,7 @@
 }
 
 .healthBar {
-  height: 10px;
-  background: linear-gradient(to right, #ff0000, #ff6b6b);
-  border-radius: var(--border-radius-sm);
-  transition: width 0.3s ease;
-}
-
-.opponentStats .healthBar {
-  background: linear-gradient(to right, #4a90e2, #357abd);
-  margin-left: auto;
+  display: none;
 }
 
 .waitingScreen {
@@ -119,4 +105,54 @@
     width: 90%;
     max-width: 400px;
   }
+}
+
+.playerName {
+  min-width: 150px;
+  font-size: 1.4rem;
+  font-weight: bold;
+  color: #fff;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.raceTracks {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+  margin-bottom: var(--spacing-lg);
+}
+
+.trackContainer {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-lg);
+  padding: var(--spacing-md);
+  background: rgba(0, 0, 0, 0.8);
+  border-radius: var(--border-radius-lg);
+}
+
+/* Remove old styles */
+.battleHUD,
+.healthBar,
+.progressTrack,
+.progressBar,
+.raceTrack,
+.trackRow,
+.raceTracks,
+.trackContainer,
+.playerName {
+  display: none;
+}
+
+.playerLabel {
+  position: absolute;
+  left: -160px;
+  top: 50%;
+  transform: translateY(-50%);
+  min-width: 150px;
+  font-size: 1.4rem;
+  font-weight: bold;
+  color: #fff;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+  text-align: right;
 }

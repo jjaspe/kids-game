@@ -42,19 +42,19 @@ async function generateDeviceToken(deviceName) {
     console.log("Initializing with project:", process.env.FIREBASE_PROJECT_ID);
 
     // Generate a secure random token
-    const token = crypto.randomBytes(32).toString("hex");
+    const token = crypto.randomBytes(16).toString("hex");
 
-    // Create a new device document
+    // Create a new device document using token as ID
     const deviceDoc = {
       name: deviceName,
-      token,
-      createdAt: new Date(),
-      lastUsed: new Date(),
+      token: token, // Keep token in document for reference
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      lastUsed: admin.firestore.FieldValue.serverTimestamp(),
     };
 
-    // Add to Firestore
+    // Add to Firestore using token as document ID
     console.log("Adding device to Firestore...");
-    const docRef = await db.collection("authorized_devices").add(deviceDoc);
+    await db.collection("authorized_devices").doc(token).set(deviceDoc);
 
     // Get the app URL from environment variables
     const appUrl = process.env.VITE_APP_URL || "http://localhost:5173";
@@ -63,7 +63,6 @@ async function generateDeviceToken(deviceName) {
     console.log("\nDevice Token Generated Successfully!");
     console.log("----------------------------------------");
     console.log(`Device Name: ${deviceName}`);
-    console.log(`Device ID: ${docRef.id}`);
     console.log(`Token: ${token}`);
     console.log(`\nGame URL: ${gameUrl}`);
     console.log("\nInstructions:");
