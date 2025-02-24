@@ -51,16 +51,33 @@ export const BattleMode = ({ onComplete, onExit }: BattleModeProps) => {
         console.log('Room ref:', roomRef);
         
         const snapshot = await get(roomRef);
-        const currentRoom = snapshot.val() || {
+        let currentRoom = snapshot.val() || {
           players: {},
           gameStatus: 'waiting',
         };
-        console.log('Current room data:', currentRoom);
+
+        // Reset the room if the game was completed
+        if (currentRoom.gameStatus === 'completed') {
+          currentRoom = {
+            players: {},
+            gameStatus: 'waiting',
+          };
+        }
 
         // Add player to room if not already present
         if (!currentRoom.players[deviceId]) {
           currentRoom.players[deviceId] = {
             name: deviceInfo?.name || 'Player',
+            score: 0,
+            progress: 0,
+            health: 100,
+            isReady: true,
+            lastActive: Date.now(),
+          };
+        } else {
+          // Reset player stats if rejoining
+          currentRoom.players[deviceId] = {
+            ...currentRoom.players[deviceId],
             score: 0,
             progress: 0,
             health: 100,
@@ -164,30 +181,33 @@ export const BattleMode = ({ onComplete, onExit }: BattleModeProps) => {
 
         {battleState.gameStatus === 'playing' && (
           <>
-            <RaceTrack>
-              {/* Player avatar */}
+            <div className={styles.trackWrapper}>
               <div className={styles.playerLabel}>
                 {battleState.players[deviceId]?.name || 'Player'}
               </div>
-              <Avatar
-                progress={battleState.players[deviceId]?.progress || 0}
-                isMoving={isMoving}
-                character="🦁"
-              />
-            </RaceTrack>
+              <RaceTrack>
+                <Avatar
+                  progress={battleState.players[deviceId]?.progress || 0}
+                  isMoving={isMoving}
+                  character= {battleState.players[deviceId]?.name === "Tati" ? "🦁" : "🦊"}
+                />
+              </RaceTrack>
+            </div>
 
             {/* Opponent track */}
             {getOpponentStats() && (
-              <RaceTrack>
+              <div className={styles.trackWrapper}>
                 <div className={styles.playerLabel}>
                   {getOpponentStats()?.name || 'Opponent'}
                 </div>
-                <Avatar
-                  progress={getOpponentStats()?.progress || 0}
-                  isMoving={false}
-                  character="🦊"
-                />
-              </RaceTrack>
+                <RaceTrack>
+                  <Avatar
+                    progress={getOpponentStats()?.progress || 0}
+                    isMoving={false}
+                    character={battleState.players[deviceId]?.name === "Tati" ? "🦊" : "🦁"}
+                  />
+                </RaceTrack>
+              </div>
             )}
 
             <MathRace

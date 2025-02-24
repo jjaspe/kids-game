@@ -1,7 +1,7 @@
 import { Problem } from '@/types/game.types';
 import clsx from 'clsx';
 import { AnimatePresence, motion } from 'framer-motion';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { NumberPad } from '../../common/NumberPad';
 import styles from './SimpleCountingDisplay.module.css';
 
@@ -21,6 +21,11 @@ export const SimpleCountingDisplay = ({
   isCorrect,
 }: SimpleCountingDisplayProps) => {
   const [currentAnswer, setCurrentAnswer] = useState('');
+
+  const handleSubmit = useCallback((value: number) => {
+    onAnswer(value);
+    setCurrentAnswer('');
+  }, [onAnswer]);
 
   useEffect(() => {
     const handleKeyPress = (event: KeyboardEvent) => {
@@ -46,14 +51,9 @@ export const SimpleCountingDisplay = ({
 
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [currentAnswer, isChecking]);
+  }, [currentAnswer, isChecking, handleSubmit]);
 
   if (!problem.visualElements) return null;
-
-  const handleSubmit = (value: number) => {
-    onAnswer(value);
-    setCurrentAnswer('');
-  };
 
   return (
     <motion.div

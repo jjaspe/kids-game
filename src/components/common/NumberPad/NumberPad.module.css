@@ -4,7 +4,6 @@
   grid-template-rows: repeat(4, auto);
   gap: var(--spacing-sm);
   width: 100%;
-  max-width: calc(var(--number-pad-size) * 3 + var(--spacing-sm) * 2);
   margin: 0 auto;
   padding: var(--spacing-md);
   background-color: var(--surface-color);
